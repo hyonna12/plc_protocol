@@ -1,7 +1,7 @@
 class RobotAddresses:
     """로봇 메모리 주소 정의"""
     
-    FRONT_ADDRESSES = {
+    FRONT = {
         'x_position': 5520,    # X축 위치 이동값
         'x_speed': 5522,       # X축 속도값
         'z_position': 5524,    # Z축 위치 이동값
@@ -10,7 +10,7 @@ class RobotAddresses:
         'done': 5000,          # 완료 레지스터
     }
     
-    REAR_ADDRESSES = {
+    REAR = {
         'x_position': 5530,    # X축 위치 이동값
         'x_speed': 5532,       # X축 속도값
         'z_position': 5534,    # Z축 위치 이동값

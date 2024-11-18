@@ -1,4 +1,4 @@
-from mc.robots.controller import RobotController
+from ..controllers.robot import RobotController
 
 def main():
     # FRONT와 REAR 로봇 컨트롤러 생성
@@ -36,3 +36,6 @@ def main():
 
 if __name__ == "__main__":
     main() 
+
+
+# python3 robot_test.py
