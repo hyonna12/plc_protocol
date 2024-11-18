@@ -14,7 +14,7 @@ def main():
         
         # D5000 영역 읽기 (20개)
         print("\n=== D5000 영역 읽기 결과 ===")
-        values = pymc3e.batchread_wordunits(headdevice="D5000", readsize=20)
+        values = pymc3e.batchread_wordunits(headdevice="D5000", readsize=50)
         for i, value in enumerate(values):
             print(f"D{5000+i}: {value} (DEC)")
         
@@ -37,7 +37,7 @@ def main():
         print(f"D5500-5501 확인: {value} (DEC)")
 
         # D5510에 1워드 값 쓰기 (16비트)
-        value16 = 1234  # 16비트 값
+        value16 = 5678  # 16비트 값
         pymc3e.batchwrite_wordunits(headdevice="D5510", values=[value16])
         
         print(f"\n=== D5510에 1워드 값 쓰기 완료 ===")
