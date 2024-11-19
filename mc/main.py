@@ -135,17 +135,17 @@ def main():
             print("Front 로봇 X축 이동 실패")
             return
 
-        # Front 로봇 핸들러 GET
-        print("\nFront 로봇 핸들러 GET...")
-        if not system.front_robot.z_handler_get():
-            print("Front 로봇 핸들러 GET 실패")
-            return
+        # # Front 로봇 핸들러 GET
+        # print("\nFront 로봇 핸들러 GET...")
+        # if not system.front_robot.z_handler_get():
+        #     print("Front 로봇 핸들러 GET 실패")
+        #     return
 
-        # Rear 로봇 Z축 이동
-        print("\nRear 로봇 Z축 45mm 이동...")
-        if not system.rear_robot.z_axis_move(45000, 5000):
-            print("Rear 로봇 Z축 이동 실패")
-            return
+        # # Rear 로봇 Z축 이동
+        # print("\nRear 로봇 Z축 45mm 이동...")
+        # if not system.rear_robot.z_axis_move(45000, 5000):
+        #     print("Rear 로봇 Z축 이동 실패")
+        #     return
         
         # system.front_robot_operation()
         # system.rear_robot_operation()

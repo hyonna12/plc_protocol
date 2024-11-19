@@ -124,3 +124,23 @@ class RobotController(BaseController):
             return result
         return False
 
+    def get_x_position(self):
+        """X축 현재 위치 읽기 (단위: 0.001mm)"""
+        addr = self.addresses['x_current']
+        result = PLCConnection.read_word(addr, 2)  # 32비트 값을 읽기 위해 2워드 읽음
+        if result:
+            # 하위워드와 상위워드를 32비트 값으로 조합
+            position = (result[1] << 16) | result[0]
+            return position
+        return None
+
+    def get_z_position(self):
+        """Z축 현재 위치 읽기 (단위: 0.001mm)"""
+        addr = self.addresses['z_current']
+        result = PLCConnection.read_word(addr, 2)  # 32비트 값을 읽기 위해 2워드 읽음
+        if result:
+            # 하위워드와 상위워드를 32비트 값으로 조합
+            position = (result[1] << 16) | result[0]
+            return position
+        return None
+

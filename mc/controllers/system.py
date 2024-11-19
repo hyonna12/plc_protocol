@@ -34,4 +34,9 @@ class SystemController(BaseController):
     def emergency_stop(self):
         """비상 정지"""
         print("비상 정지 요청...")
-        return self._set_bit(SystemAddresses.COMMAND, SystemCommands.EMERGENCY, True)
+        # 비상정지는 즉시 실행되어야 하므로 응답 대기 없이 신호만 전송
+        if self._set_bit(SystemAddresses.COMMAND, SystemCommands.EMERGENCY, True):
+            print("비상 정지 신호 전송 완료")
+            return True
+        print("비상 정지 신호 전송 실패")
+        return False
