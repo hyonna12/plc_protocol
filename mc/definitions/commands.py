@@ -25,4 +25,4 @@ class SystemCommands:
     READY = 0      # 운전 준비
     START = 1      # 운전 시작
     STOP = 2       # 운전 정지
-    EMERGENCY = 4  # 비상 정지
+    # EMERGENCY = 4  # 비상 정지

@@ -34,6 +34,7 @@ class BaseController:
     def _check_bit(self, addr, bit_position):
         """워드의 특정 비트 확인"""
         result = PLCConnection.read_bits(addr, [bit_position])
+        print(f"비트 확인 - 주소: D{addr}, 비트: {bit_position}, 값: {result[0] if result else False}")
         return result[0] if result else False
 
     def wait_for_bit(self, addr, bit_position, timeout=30):

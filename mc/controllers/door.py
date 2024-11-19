@@ -1,6 +1,6 @@
-from ..base.controller import BaseController
-from ..definitions.commands import DoorCommands
-from ..definitions.addresses import DoorAddresses
+from mc.base.controller import BaseController
+from mc.definitions.commands import DoorCommands
+from mc.definitions.addresses import DoorAddresses
 
 class DoorController(BaseController):
     """도어 제어 클래스"""

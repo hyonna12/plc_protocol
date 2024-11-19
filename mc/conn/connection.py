@@ -86,8 +86,9 @@ class PLCConnection:
         if not cls._connected or not cls._plc:
             print("PLC가 연결되지 않음")
             return False
-            
+        
         try:
+            # 2워드를 한 번에 쓰기
             cls._plc.batchwrite_wordunits(f"D{addr}", values)
             return True
         except Exception as e:

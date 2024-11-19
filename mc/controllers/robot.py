@@ -1,7 +1,8 @@
-from ..base.controller import BaseController
-from ..definitions.commands import RobotCommands
-from ..definitions.addresses import RobotAddresses
-from ..conn.connection import PLCConnection
+from mc.base.controller import BaseController
+from mc.definitions.commands import RobotCommands
+from mc.definitions.addresses import RobotAddresses
+from mc.conn.connection import PLCConnection
+import time
 
 class RobotController(BaseController):
     """로봇 제어 클래스"""
@@ -19,29 +20,52 @@ class RobotController(BaseController):
         self.robot_name = "FRONT" if is_front else "REAR"
 
     def _write_position_speed(self, position_addr, speed_addr, position, speed):
-        """위치와 속도 값 쓰기 (32비트)
-        Args:
-            position_addr: 위치 값 시작 주소
-            speed_addr: 속도 값 시작 주소
-            position: 위치 값 (32비트)
-            speed: 속도 값 (32비트)
-        """
+        """위치와 속도 값 쓰기 (32비트)"""
         try:
-            # 32비트 값을 상위/하위 워드로 분할
-            position_low = position & 0xFFFF
-            position_high = (position >> 16) & 0xFFFF
-            speed_low = speed & 0xFFFF
-            speed_high = (speed >> 16) & 0xFFFF
+            print(f"\n[{self.robot_name}] === 위치/속도 값 쓰기 시작 ===")
+            
+            # 32비트 값을 16비트씩 분할
+            position_low = position & 0xFFFF          # 하위 16비트
+            position_high = (position >> 16) & 0xFFFF # 상위 16비트
+            speed_low = speed & 0xFFFF                # 하위 16비트
+            speed_high = (speed >> 16) & 0xFFFF       # 상위 16비트
+            
+            if position_low > 32767:
+                position_low -= 65536  # signed 변환 (음수 처리)
+            if position_high > 32767:
+                position_high -= 65536  # signed 변환 (음수 처리)
+            if speed_low > 32767:
+                speed_low -= 65536  # signed 변환 (음수 처리)
+            if speed_high > 32767:
+                speed_high -= 65536  # signed 변환 (음수 처리)
+
+            print(f"[{self.robot_name}] 위치 값 분할:")
+            print(f"  - 32비트 값: {position} (0x{position:08X})")
+            print(f"  - D{position_addr} (하위 워드): {position_low} (0x{position_low:04X})")
+            print(f"  - D{position_addr+1} (상위 워드): {position_high} (0x{position_high:04X})")
             
             # 위치 값 쓰기 (연속된 2개 워드)
+            print(f"\n[{self.robot_name}] 위치 값 쓰기 시도 (D{position_addr}-D{position_addr+1})...")
             if not PLCConnection.write_word(position_addr, [position_low, position_high]):
+                print(f"[{self.robot_name}] 위치 값 쓰기 실패")
                 return False
+            print(f"[{self.robot_name}] 위치 값 쓰기 성공")
+            
+            print(f"\n[{self.robot_name}] 속도 값 분할:")
+            print(f"  - 32비트 값: {speed} (0x{speed:08X})")
+            print(f"  - D{speed_addr} (하위 워드): {speed_low} (0x{speed_low:04X})")
+            print(f"  - D{speed_addr+1} (상위 워드): {speed_high} (0x{speed_high:04X})")
             
             # 속도 값 쓰기 (연속된 2개 워드)
+            print(f"\n[{self.robot_name}] 속도 값 쓰기 시도 (D{speed_addr}-D{speed_addr+1})...")
             if not PLCConnection.write_word(speed_addr, [speed_low, speed_high]):
+                print(f"[{self.robot_name}] 속도 값 쓰기 실패")
                 return False
+            print(f"[{self.robot_name}] 속도 값 쓰기 성공")
             
+            print(f"\n[{self.robot_name}] === 위치/속도 값 쓰기 완료 ===")
             return True
+            
         except Exception as e:
             print(f"[{self.robot_name}] 위치/속도 설정 실패: {str(e)}")
             return False
@@ -55,39 +79,77 @@ class RobotController(BaseController):
                   예) 10mm/s = 10000
         """
         print(f"[{self.robot_name}] X축 이동 명령 전송 (위치: {position/1000.0}mm, 속도: {speed/1000.0}mm/s)")
-        if self._write_position_speed(
+        
+        # 1. 위치/속도 값 쓰기
+        if not self._write_position_speed(
             self.addresses['x_position'],
             self.addresses['x_speed'],
             position,
             speed
         ):
-            if self._set_bit(self.addresses['command'], RobotCommands.X_AXIS_MOVE, True):
-                result = self.wait_for_bit(self.addresses['done'], RobotCommands.X_AXIS_MOVE)
-                self.reset_command(self.addresses['command'])
-                return result
-        return False
+            print(f"[{self.robot_name}] 위치/속도 값 쓰기 실패")
+            return False
+        
+        # print(f"[{self.robot_name}] 위치/속도 값 쓰기 완료, 1초 대기...")
+        # time.sleep(1)  # 0.5초 대기
+        
+        # 2. X축 이동 명령 비트 설정
+        print(f"[{self.robot_name}] X축 이동 명령 비트 설정 시도...")
+        if not self._set_bit(self.addresses['command'], RobotCommands.X_AXIS_MOVE, True):
+            print(f"[{self.robot_name}] X축 이동 명령 비트 설정 실패")
+            return False
+        
+        # 3. 완료 신호 대기
+        print(f"[{self.robot_name}] X축 이동 완료 신호 대기...")
+        result = self.wait_for_bit(self.addresses['done'], RobotCommands.X_AXIS_MOVE)
+        if not result:
+            print(f"[{self.robot_name}] X축 이동 완료 신호 대기 시간 초과")
+        
+        # 4. 명령 비트 리셋
+        print(f"\n[{self.robot_name}] 명령 비트 리셋...")
+        if not self.reset_command(self.addresses['command']):
+            print(f"[{self.robot_name}] 명령 비트 리셋 실패")
+        return result
     
     def z_axis_move(self, position, speed):
-        """Z축 이동 지령
-        Args:
-            position: 이동할 위치 값 (0.001mm 단위)
-                     예) 10mm = 10000, 100mm = 100000
-            speed: 이동 속도 값 (0.001mm/s 단위)
-                  예) 10mm/s = 10000
-        """
-        print(f"[{self.robot_name}] Z축 이동 명령 전송 (위치: {position/1000.0}mm, 속도: {speed/1000.0}mm/s)")
-        if self._write_position_speed(
+        """Z축 이동 지령"""
+        print(f"\n[{self.robot_name}] === Z축 이동 명령 시작 ===")
+        print(f"[{self.robot_name}] 목표: 위치={position/1000.0}mm, 속도={speed/1000.0}mm/s")
+        
+        # 1. 위치/속도 값 쓰기
+        if not self._write_position_speed(
             self.addresses['z_position'],
             self.addresses['z_speed'],
             position,
             speed
         ):
-            if self._set_bit(self.addresses['command'], RobotCommands.Z_AXIS_MOVE, True):
-                result = self.wait_for_bit(self.addresses['done'], RobotCommands.Z_AXIS_MOVE)
-                self.reset_command(self.addresses['command'])
-                return result
-        return False
-
+            print(f"[{self.robot_name}] 위치/속도 값 쓰기 실패")
+            return False
+        
+        # print(f"\n[{self.robot_name}] 위치/속도 값 쓰기 완료, 0.5초 대기...")
+        # time.sleep(0.5)  # 0.5초 대기
+        
+        # 2. Z축 이동 명령 비트 설정
+        print(f"\n[{self.robot_name}] Z축 이동 명령 비트 설정 시도...")
+        if not self._set_bit(self.addresses['command'], RobotCommands.Z_AXIS_MOVE, True):
+            print(f"[{self.robot_name}] Z축 이동 명령 비트 설정 실패")
+            return False
+        print(f"[{self.robot_name}] Z축 이동 명령 비트 설정 성공")
+        
+        # 3. 완료 신호 대기
+        print(f"\n[{self.robot_name}] Z축 이동 완료 신호 대기...")
+        result = self.wait_for_bit(self.addresses['done'], RobotCommands.Z_AXIS_MOVE)
+        if not result:
+            print(f"[{self.robot_name}] Z축 이동 완료 신호 대기 시간 초과")
+        else:
+            print(f"[{self.robot_name}] Z축 이동 완료 신호 수신")
+        
+        # 4. 명령 비트 리셋
+        print(f"\n[{self.robot_name}] 명령 비트 리셋...")
+        if not self.reset_command(self.addresses['command']):
+            print(f"[{self.robot_name}] 명령 비트 리셋 실패")
+        return result
+    
     def z_handler_get(self):
         """Z축 핸들러 GET 지령"""
         print(f"[{self.robot_name}] Z축 핸들러 GET 명령 전송")

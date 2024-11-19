@@ -1,7 +1,9 @@
-from controllers.robot import RobotController
-from controllers.door import DoorController
-from controllers.system import SystemController
-from conn.connection import PLCConnection
+from mc.controllers.robot import RobotController
+from mc.controllers.door import DoorController
+from mc.controllers.system import SystemController
+from mc.conn.connection import PLCConnection
+from mc.definitions.addresses import SystemAddresses
+from mc.definitions.commands import SystemCommands
 import time
 import sys
 
@@ -24,16 +26,13 @@ class RobotSystem:
             print("PLC 연결 실패")
             return False
             
-        # 운전 준비
-        if not self.system.ready():
-            print("운전 준비 실패")
-            return False
-            
-        # 운전 시작
-        if not self.system.start():
-            print("운전 시작 실패")
-            return False
-            
+        # 운전 시작 요청 및 완료 대기
+        # print("운전 시작 요청...")
+        # if not self.system.start():
+        #     print("운전 시작 실패")
+        #     return False
+        
+        # print("운전 시작 완료")
         print("=== 시스템 초기화 완료 ===")
         return True
         
@@ -111,10 +110,25 @@ class RobotSystem:
             
         return True
 
-    def emergency_stop(self):
-        """비상 정지"""
-        print("\n=== 비상 정지 ===")
-        self.system.emergency_stop()
+    def ready(self):
+        """운전 준비"""
+        print("\n=== 운전 준비 ===")
+        self.system.ready()
+
+    def start(self):
+        """운전 시작"""
+        print("\n=== 운전 시작 ===")
+        self.system.start()
+
+    def stop(self):
+        """운전 정지"""
+        print("\n=== 운전 정지 ===")
+        self.system.stop()
+
+    # def emergency_stop(self):
+    #     """비상 정지"""
+    #     print("\n=== 비상 정지 ===")
+    #     self.system.emergency_stop()
         
 def main():
     # 시스템 객체 생성 (컨트롤러 초기화)
@@ -125,15 +139,30 @@ def main():
         if not system.initialize():
             print("시스템 초기화 실패")
             return
-            
+
+        system.start()
+
+        system.front_robot.z_handler_rotate()
+
+
+        # system.door.in_door_open()
+
+
         # 작업 수행
         # Front 로봇 X축 이동
-        # 위치: 100mm = 100.000 = 100000
+        # 위치: 10mm = 10.000 = 10000
         # 속도: 5mm/s = 5.000 = 5000
-        print("\nFront 로봇 X축 100mm 이동...")
-        if not system.front_robot.x_axis_move(100000, 5000):
-            print("Front 로봇 X축 이동 실패")
-            return
+        # print("\nFront 로봇 X축 30mm 이동...")
+        # if not system.rear_robot.x_axis_move(30000, 20000): # 100, 20
+        #     print("Front 로봇 X축 이동 실패")
+        #     return
+
+        # Front 로봇 Z축 이동
+        # print("\nFront 로봇 Z축 45mm 이동...")
+        # if not system.rear_robot.z_axis_move(500000, 20000):
+        #     print("Front 로봇 Z축 이동 실패")
+        #     return
+        
 
         # # Front 로봇 핸들러 GET
         # print("\nFront 로봇 핸들러 GET...")
@@ -153,12 +182,13 @@ def main():
    
     except KeyboardInterrupt:
         print("\n키보드 인터럽트 감지")
-        system.emergency_stop()  # 비상 정지 실행
     except Exception as e:
         print(f"\n에러 발생: {str(e)}")
-        system.emergency_stop()  # 비상 정지 실행
-    finally:
-        system.shutdown()
+    # finally:
+    #     system.shutdown()
 
 if __name__ == "__main__":
     main() 
+
+
+# python3 -m mc.main
