@@ -23,3 +23,8 @@ class DoorAddresses:
     """도어 메모리 주소 정의"""
     COMMAND = 5502  # 도어 명령 레지스터
     DONE = 5002     # 도어 완료 레지스터
+
+class SystemAddresses:
+    """시스템 제어 메모리 주소 정의"""
+    COMMAND = 5503  # 시스템 명령 레지스터
+    STATUS = 5003   # 시스템 상태 레지스터

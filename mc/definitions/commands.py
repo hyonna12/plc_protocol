@@ -19,3 +19,10 @@ class DoorCommands:
     ROBOT_DOOR2_CLOSE = 7  # Robot Door#2 Close 지령
     HANDLER_TRIGGER_F = 8  # 핸들러 바코드 Trigger F
     HANDLER_TRIGGER_R = 9  # 핸들러 바코드 Trigger R 
+
+class SystemCommands:
+    """시스템 제어 명령 비트 정의"""
+    READY = 0      # 운전 준비
+    START = 1      # 운전 시작
+    STOP = 2       # 운전 정지
+    EMERGENCY = 3  # 비상 정지

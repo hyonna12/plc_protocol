@@ -1,7 +1,7 @@
 from ..base.controller import BaseController
 from ..definitions.commands import RobotCommands
 from ..definitions.addresses import RobotAddresses
-from ..communication.connection import PLCConnection
+from ..conn.connection import PLCConnection
 
 class RobotController(BaseController):
     """로봇 제어 클래스"""

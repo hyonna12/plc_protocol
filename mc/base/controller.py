@@ -1,4 +1,4 @@
-from ..communication.connection import PLCConnection
+from ..conn.connection import PLCConnection
 import time
 
 class BaseController:
