@@ -5,7 +5,8 @@ class RobotCommands:
     Z_HANDLER_GET = 2      # Z축 핸들러 GET 지령
     Z_HANDLER_PUT = 3      # Z축 핸들러 PUT 지령
     Z_HANDLER_ROT_HOME = 4 # Z축 핸들러 회전 원위치 지령
-    Z_HANDLER_ROT = 5      # Z축 핸들러 회전 지령
+    Z_HANDLER_ROT_F = 5    # Z축 핸들러 Front 회전 지령
+    Z_HANDLER_ROT_R = 6    # Z축 핸들러 Rear 회전 지령
 
 class DoorCommands:
     """도어 명령 비트 정의"""

@@ -161,7 +161,7 @@ class RobotController(BaseController):
     
     def z_handler_put(self):
         """Z축 핸들러 PUT 지령"""
-        print(f"[{self.robot_name}] Z축 핸들러 PUT 명령 전송")
+        print(f"[{self.robot_name}] Z축 핸들러 PUT 명�� 전송")
         if self._set_bit(self.addresses['command'], RobotCommands.Z_HANDLER_PUT, True):
             result = self.wait_for_bit(self.addresses['done'], RobotCommands.Z_HANDLER_PUT)
             self.reset_command(self.addresses['command'])
@@ -177,15 +177,24 @@ class RobotController(BaseController):
             return result
         return False
     
-    def z_handler_rotate(self):
-        """Z축 핸들러 회전 지령"""
-        print(f"[{self.robot_name}] Z축 핸들러 회전 명령 전송")
-        if self._set_bit(self.addresses['command'], RobotCommands.Z_HANDLER_ROT, True):
-            result = self.wait_for_bit(self.addresses['done'], RobotCommands.Z_HANDLER_ROT)
+    def z_handler_rotate_front(self):
+        """Z축 핸들러 Front 회전 지령"""
+        print(f"[{self.robot_name}] Z축 핸들러 Front 회전 명령 전송")
+        if self._set_bit(self.addresses['command'], RobotCommands.Z_HANDLER_ROT_F, True):
+            result = self.wait_for_bit(self.addresses['done'], RobotCommands.Z_HANDLER_ROT_F)
             self.reset_command(self.addresses['command'])
             return result
         return False
-
+    
+    def z_handler_rotate_rear(self):
+        """Z축 핸들러 Rear 회전 지령"""
+        print(f"[{self.robot_name}] Z축 핸들러 Rear 회전 명령 전송")
+        if self._set_bit(self.addresses['command'], RobotCommands.Z_HANDLER_ROT_R, True):
+            result = self.wait_for_bit(self.addresses['done'], RobotCommands.Z_HANDLER_ROT_R)
+            self.reset_command(self.addresses['command'])
+            return result
+        return False
+    
     def get_x_position(self):
         """X축 현재 위치 읽기 (단위: 0.001mm)"""
         addr = self.addresses['x_current']

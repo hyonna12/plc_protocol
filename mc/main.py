@@ -140,12 +140,12 @@ def main():
             print("시스템 초기화 실패")
             return
 
-        system.start()
+        # system.start()
 
-        system.front_robot.z_handler_rotate()
+        # system.front_robot.z_handler_rotate_home()
 
 
-        # system.door.in_door_open()
+        system.door.in_door_close()
 
 
         # 작업 수행
@@ -153,7 +153,7 @@ def main():
         # 위치: 10mm = 10.000 = 10000
         # 속도: 5mm/s = 5.000 = 5000
         # print("\nFront 로봇 X축 30mm 이동...")
-        # if not system.rear_robot.x_axis_move(30000, 20000): # 100, 20
+        # if not system.front_robot.x_axis_move(0, 20000): # 100, 20
         #     print("Front 로봇 X축 이동 실패")
         #     return
 
