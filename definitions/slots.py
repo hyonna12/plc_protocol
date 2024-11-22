@@ -4,10 +4,16 @@ class SlotLayout:
     def __init__(self):
         # 슬롯 간격 (mm)
         self.GRID_WIDTH = 100   # x축 간격
-        self.GRID_HEIGHT = 45  # z축 간격
+        self.GRID_HEIGHT = 45   # z축 간격
         
         # 테이블 위치
         self.TABLE_POSITION = {"x": 0, "z": 0}
+        
+        # 로봇별 기본 대기 위치 (홈 포지션)
+        self.DEFAULT_POSITIONS = {
+            "front": {"x": -100, "z": 0},    # 전면 로봇: 테이블보다 100mm 뒤
+            "rear": {"x": -200, "z": 0}      # 후면 로봇: 테이블보다 200mm 뒤
+        }
         
         # 슬롯 위치 매핑 초기화
         self.slot_positions = self._init_slot_positions()
@@ -34,12 +40,17 @@ class SlotLayout:
             
         return positions
         
-    def get_position(self, slot_id: int) -> dict:
-        """슬롯 ID에 해당하는 x, z 좌표 반환"""
+    def get_position(self, slot_id: int, is_front: bool = True) -> dict:
+        """슬롯 ID에 해당하는 x, z 좌표 반환
+        
+        Args:
+            slot_id: 슬롯 ID (0: 테이블, -1: 기본 위치)
+            is_front: True=전면 로봇, False=후면 로봇
+        """
         if slot_id == 0:  # 테이블
             return self.TABLE_POSITION
-        # elif slot_id == -1:
-        #     return self.DEFAULT_POSITION
+        elif slot_id == -1:  # 기본 대기 위치
+            return self.DEFAULT_POSITIONS["front" if is_front else "rear"]
         return self.slot_positions.get(slot_id)
         
     def is_front_slot(self, slot_id: int) -> bool:

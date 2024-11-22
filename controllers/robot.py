@@ -70,45 +70,44 @@ class RobotController(BaseController):
             print(f"[{self.robot_name}] 위치/속도 설정 실패: {str(e)}")
             return False
 
-    def x_axis_move(self, slot_id: int, speed: int) -> bool:
-        """X축 이동
+    def x_axis_move(self, position: int, speed: int) -> bool:
+        """X축 이동 지령
         Args:
-            slot_id: 목표 슬롯 ID (0: 테이블)
+            position: 목표 위치 (mm)
             speed: 이동 속도
         """
-        print(f"[{self.robot_name}] X축 이동 명령 시작. slot_id={slot_id}")
+        print(f"\n[{self.robot_name}] === X축 이동 명령 시작 ===")
+        print(f"[{self.robot_name}] 목표: 위치={position/1000.0}mm, 속도={speed/1000.0}mm/s")
         
-        # 슬롯 ID를 좌표로 변환
-        position = self.slot_layout.get_position(slot_id)
-        if not position:
-            print(f"[{self.robot_name}] 잘못된 슬롯 ID: {slot_id}")
+        # 1. 위치/속도 값 쓰기
+        if not self._write_position_speed(
+            self.addresses['x_position'],
+            self.addresses['x_speed'],
+            position,
+            speed
+        ):
+            print(f"[{self.robot_name}] 위치/속도 값 쓰기 실패")
             return False
-            
-        print(f"[{self.robot_name}] 목표 위치: x={position['x']}mm, z={position['z']}mm")
         
-        # X축 이동
-        if not self._move_axis("x", position["x"], speed):
+        # 2. X축 이동 명령 비트 설정
+        print(f"\n[{self.robot_name}] X축 이동 명령 비트 설정 시도...")
+        if not self._set_bit(self.addresses['command'], RobotCommands.X_AXIS_MOVE, True):
+            print(f"[{self.robot_name}] X축 이동 명령 비트 설정 실패")
             return False
-            
-        # Z축 이동
-        if position["z"] != 0:
-            if not self._move_axis("z", position["z"], speed):
-                return False
-                
-        return True
+        print(f"[{self.robot_name}] X축 이동 명령 비트 설정 성공")
         
-    def _move_axis(self, axis: str, target: int, speed: int) -> bool:
-        """단일 축 이동"""
-        print(f"[{self.robot_name}] {axis}축 이동: {target/1000.0}mm, 속도: {speed/1000.0}mm/s")
+        # 3. 완료 신호 대기
+        print(f"\n[{self.robot_name}] X축 이동 완료 신호 대기...")
+        result = self.wait_for_bit(self.addresses['done'], RobotCommands.X_AXIS_MOVE)
+        if not result:
+            print(f"[{self.robot_name}] X축 이동 완료 신호 대기 시간 초과")
+        else:
+            print(f"[{self.robot_name}] X축 이동 완료 신호 수신")
         
-        # 이동 명령 비트 설정
-        command_bit = RobotCommands.X_AXIS_MOVE if axis == "x" else RobotCommands.Z_AXIS_MOVE
-        if not self._set_bit(self.addresses['command'], command_bit, True):
-            return False
-            
-        # 완료 신호 대기
-        result = self.wait_for_bit(self.addresses['done'], command_bit)
-        self.reset_command(self.addresses['command'])
+        # 4. 명령 비트 리셋
+        print(f"\n[{self.robot_name}] 명령 비트 리셋...")
+        if not self.reset_command(self.addresses['command']):
+            print(f"[{self.robot_name}] 명령 비트 리셋 실패")
         return result
     
     def z_axis_move(self, position, speed):

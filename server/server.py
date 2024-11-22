@@ -13,7 +13,7 @@ class PLCServer:
         self.slot_layout = SlotLayout()
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.running = True
-
+        self.client = None  # 연결된 클라이언트 저장
 
     def start(self, host="0.0.0.0", port=5000):
         self.server.bind((host, port))
@@ -24,6 +24,7 @@ class PLCServer:
             try:
                 client, addr = self.server.accept()
                 print(f"Connected by {addr}")
+                self.client = client  # 클라이언트 저장
                 client_thread = threading.Thread(target=self.handle_client, args=(client,))
                 client_thread.start()
             except Exception as e:
@@ -64,11 +65,13 @@ class PLCServer:
         
         try:
             if cmd_type == "robot_move":
-                robot = self.robot_system.front_robot if params["robot_id"] == 1 else self.robot_system.rear_robot
+                robot_id = params["robot_id"]
+                is_front = (robot_id == 1)  # robot_id 1은 전면, 2는 후면
+                robot = self.robot_system.front_robot if is_front else self.robot_system.rear_robot
                 
                 # 슬롯 ID를 좌표로 변환
                 slot_id = params["position"]
-                target_pos = self.slot_layout.get_position(slot_id)
+                target_pos = self.slot_layout.get_position(slot_id, is_front)
                 if not target_pos:
                     return {
                         "success": False, 
@@ -76,7 +79,8 @@ class PLCServer:
                         "command_id": command_id,
                         "details": {
                             "step": "position_validation",
-                            "slot_id": slot_id
+                            "slot_id": slot_id,
+                            "robot_id": robot_id
                         }
                     }
                 
@@ -91,7 +95,8 @@ class PLCServer:
                         "command_id": command_id,
                         "details": {
                             "step": "x_axis",
-                            "position": target_pos["x"]
+                            "position": target_pos["x"],
+                            "robot_id": robot_id
                         }
                     }
                 
@@ -104,7 +109,8 @@ class PLCServer:
                         "command_id": command_id,
                         "details": {
                             "step": "z_axis",
-                            "position": target_pos["z"]
+                            "position": target_pos["z"],
+                            "robot_id": robot_id
                         }
                     }
                 
@@ -114,7 +120,7 @@ class PLCServer:
                     "command_id": command_id,
                     "details": {
                         "position": {"x": target_pos["x"], "z": target_pos["z"]},
-                        "robot_id": params["robot_id"]
+                        "robot_id": robot_id
                     }
                 }
                 
@@ -273,6 +279,22 @@ class PLCServer:
                 }
             }
 
+    def send_message(self, message):
+        """APCS로 메시지 전송"""
+        if self.client is None:
+            print("No client connected")
+            return False
+            
+        try:
+            data = json.dumps(message).encode()
+            self.client.send(data)
+
+
+            print(f"Message sent: {message}")
+            return True
+        except Exception as e:
+            print(f"Error sending message: {e}")
+            return False
 
     # def wait_for_complete(self, controller) -> bool:
     #     """PLC로부터 완료 신호 대기"""
