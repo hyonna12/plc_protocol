@@ -48,34 +48,50 @@ class PLCServer:
 
     def handle_client(self, client):
         """클라이언트 요청 처리"""
-        client.settimeout(60)  # 타임아웃 설정
+        client.settimeout(None)
+
+        # TCP keepalive 설정 최적화
+        client.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        client.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 1)    
+        client.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 1)   
+        client.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 10)    
+
+        # 버퍼 크기 설정
+        client.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8192)
+        client.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 8192)
 
         while self.running:
             try:
-                data = client.recv(1024)
+                data = client.recv(4096)
                 if not data:
+                    print("[PLC Server] 클라이언트 연결 종료 감지")
                     break
                 
-                command = json.loads(data.decode())
-                print(f"[PLC Server] 수신된 명령: {command}")
+                try:
+                    command = json.loads(data.decode())
+                    print(f"[PLC Server] 수신된 명령: {command}")
 
-                if command.get("type") == "ping":
-                    response = {"success": True, "message": "pong"}
+                    response = self.execute_command(command)
                     client.send(json.dumps(response).encode())
-                    print("[PLC Server] Pong 응답 전송")
+
+                except json.JSONDecodeError:
+                    print("[PLC Server] JSON 디코딩 에러, 무시하고 계속")
                     continue
 
-                response = self.execute_command(command)
-                client.send(json.dumps(response).encode())
-                print(f"[PLC Server] 응답 전송: {response}")
-
-            except socket.timeout:
-                print("Timeout occurred, closing client connection")
-                break
             except Exception as e:
-                print(f"Error handling client: {e}")
+                print(f"[PLC Server] 예외 발생: {e}")
                 break
-        client.close()
+
+        print("[PLC Server] 클라이언트 연결 종료")
+        if self.client == client:
+            self.client = None
+        try:
+            client.close()
+        except:
+            pass
+
+        # 새로운 연결을 즉시 받을 준비
+        print("[PLC Server] 새로운 연결 대기 중...")
 
     def execute_command(self, command: Dict[str, Any]) -> Dict[str, Any]:
         cmd_type = command.get("type")
