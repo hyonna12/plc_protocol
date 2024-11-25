@@ -16,6 +16,7 @@ class PLCServer:
         self.client = None  # 연결된 클라이언트 저장
 
     def start(self, host="0.0.0.0", port=5000):
+        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self.server.bind((host, port))
         self.server.listen(1)
         print(f"PLC Server listening on {host}:{port}")
@@ -25,19 +26,32 @@ class PLCServer:
                 client, addr = self.server.accept()
                 print(f"Connected by {addr}")
                 self.client = client  # 클라이언트 저장
-                client_thread = threading.Thread(target=self.handle_client, args=(client,))
-                client_thread.start()
+                print("[PLC Server] 새로운 클라이언트 연결")
+                self.handle_client(client)
             except Exception as e:
                 print(f"Error accepting connection: {e}")
 
-    def handle_client(self, client: socket.socket):
-        print("[PLC Server] 새로운 클라이언트 연결")
+    def send_message(self, message):
+        """APCS로 메시지 전송"""
+        if self.client is None:
+            print("No client connected")
+            return False
+            
+        try:
+            data = json.dumps(message).encode()
+            self.client.send(data)
+            print(f"Message sent: {message}")
+            return True
+        except Exception as e:
+            print(f"Error sending message: {e}")
+            return False
+
+    def handle_client(self, client):
+        """클라이언트 요청 처리"""
+        client.settimeout(60)  # 타임아웃 설정
 
         while self.running:
             try:
-                # 소켓 타임아웃 설정
-                client.settimeout(30.0)  # 30초로 설정
-                
                 data = client.recv(1024)
                 if not data:
                     break
@@ -45,14 +59,19 @@ class PLCServer:
                 command = json.loads(data.decode())
                 print(f"[PLC Server] 수신된 명령: {command}")
 
+                if command.get("type") == "ping":
+                    response = {"success": True, "message": "pong"}
+                    client.send(json.dumps(response).encode())
+                    print("[PLC Server] Pong 응답 전송")
+                    continue
+
                 response = self.execute_command(command)
-                
                 client.send(json.dumps(response).encode())
                 print(f"[PLC Server] 응답 전송: {response}")
 
             except socket.timeout:
-                print("Socket timeout - waiting for next command")
-                continue
+                print("Timeout occurred, closing client connection")
+                break
             except Exception as e:
                 print(f"Error handling client: {e}")
                 break
@@ -279,36 +298,6 @@ class PLCServer:
                 }
             }
 
-    def send_message(self, message):
-        """APCS로 메시지 전송"""
-        if self.client is None:
-            print("No client connected")
-            return False
-            
-        try:
-            data = json.dumps(message).encode()
-            self.client.send(data)
-
-
-            print(f"Message sent: {message}")
-            return True
-        except Exception as e:
-            print(f"Error sending message: {e}")
-            return False
-
-    # def wait_for_complete(self, controller) -> bool:
-    #     """PLC로부터 완료 신호 대기"""
-    #     try:
-    #         # 완료 신호 대기 (최대 10초)
-    #         for _ in range(100):  # 100 * 0.1초 = 10초
-    #             if controller.check_done():  # 실제 구현 필요
-    #                 return True
-    #             time.sleep(0.1)
-    #         return False
-    #     except Exception as e:
-    #         print(f"Error waiting for complete: {e}")
-    #         return False
-        
     def stop(self):
         self.running = False
         self.server.close()

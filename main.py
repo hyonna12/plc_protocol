@@ -399,6 +399,13 @@ def main():
         return
         
     try:
+
+        server = PLCServer(robot_system)
+        server_thread = threading.Thread(target=server.start)
+        server_thread.daemon = True
+        server_thread.start()
+        print("PLC Server started")
+        
         # 운전 준비 및 시작
         # robot_system.ready()
         # robot_system.start()
@@ -444,10 +451,14 @@ def main():
         print("\n=== 테스트 종료 ===")
         
         # 5. 택배함 상태 모니터링
-        server = PLCServer(robot_system)
-        server.start()
-        print("PLC Server started")
-
+        # 클라이언트 연결 대기
+        while True:
+            if server.client is not None:  # 클라이언트가 연결되었는지 확인
+                print("Client connected, sending message...")
+                break
+            time.sleep(1)  # 1초마다 확인
+        
+        time.sleep(10)
         # APCS로 네트워크 절체 감지 메시지 전송
         test_message = {
             "success": True,
@@ -465,6 +476,10 @@ def main():
         print("\n=== APCS로 네트워크 절체 감지 메시지 전송 ===")
         server.send_message(test_message)
         print(f"메시지 전송 완료: {test_message}")
+
+        # 메인 스레드 유지
+        while True:
+            time.sleep(1)
             
     except KeyboardInterrupt:
         print("\nTest interrupted by user")
